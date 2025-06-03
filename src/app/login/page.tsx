@@ -10,7 +10,7 @@ interface LoginPageProps {
   };
 }
 
-export default function LoginPage({ searchParams }: LoginPageProps) {
+export default async function LoginPage({ searchParams }: LoginPageProps) {
   const error = searchParams?.error;
   const message = searchParams?.message ? decodeURIComponent(searchParams.message) : undefined;
 
