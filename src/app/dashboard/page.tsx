@@ -8,6 +8,8 @@ import { NEXT_PUBLIC_APP_URL } from '@/config';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+
 async function getBoardsData(): Promise<BoardWithDetails[] | { error: string }> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout

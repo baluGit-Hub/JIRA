@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation';
 import { isAuthenticated } from '@/lib/authService';
 import { Loader2 } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   // This component runs on the server.
   // We check authentication status and redirect accordingly.
