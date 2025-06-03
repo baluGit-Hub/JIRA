@@ -15,12 +15,11 @@ export async function GET(request: NextRequest) {
   const errorDescription = searchParams.get('error_description');
 
   const storedState = cookies().get('jira_oauth_state')?.value;
-  // It's good practice to delete the state cookie once it's used or if it's invalid,
-  // regardless of whether the state check passes or fails.
-  cookies().delete('jira_oauth_state'); 
-
-  // For debugging, one might log the state values here if the issue persists:
-  // console.log("OAuth State Check: Received State from JIRA Query:", state, "Stored State from Cookie:", storedState);
+  // Delete the state cookie once it's read or if an error occurs early.
+  // This should happen regardless of whether the state check passes or fails.
+  if (cookies().has('jira_oauth_state')) {
+    cookies().delete('jira_oauth_state');
+  }
 
   if (error) { 
     console.error(`OAuth error from Atlassian: ${error} - ${errorDescription || 'No description'}`);
@@ -32,10 +31,12 @@ export async function GET(request: NextRequest) {
 
   if (!state || state !== storedState) {
     console.warn("OAuth State Mismatch: Received State:", state, "Stored State:", storedState, "- Redirecting to login with invalid_state error.");
+    // Cookie already deleted above
     return NextResponse.redirect(`${NEXT_PUBLIC_APP_URL}/login?error=invalid_state`);
   }
 
   if (!code) {
+    // Cookie already deleted above
     return NextResponse.redirect(`${NEXT_PUBLIC_APP_URL}/login?error=missing_code`);
   }
 

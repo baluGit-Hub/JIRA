@@ -1,12 +1,12 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import Header from "@/components/Header";
+// import Header from "@/components/Header"; // Removed Header from loading state
 
 export default function Loading() {
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
+      {/* <Header /> */} {/* Header will be rendered by the actual DashboardPage */}
       <main className="flex-1 container mx-auto p-4 md:p-8">
-        <Skeleton className="h-8 w-1/3 mb-6" />
+        <Skeleton className="h-8 w-1/3 mb-6 mt-16" /> {/* Added margin top to simulate header space */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
