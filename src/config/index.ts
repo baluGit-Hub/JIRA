@@ -5,11 +5,17 @@ export const JIRA_REDIRECT_URI = process.env.JIRA_REDIRECT_URI!;
 export const NEXT_PUBLIC_APP_URL = process.env.NEXT_PUBLIC_APP_URL!;
 export const SESSION_SECRET = process.env.SESSION_SECRET!;
 
-if (!JIRA_CLIENT_ID || !JIRA_CLIENT_SECRET || !JIRA_REDIRECT_URI || !NEXT_PUBLIC_APP_URL || !SESSION_SECRET) {
-  console.error("Missing required environment variables. Check your .env.local file or environment configuration.");
-  if (process.env.NODE_ENV === 'production') {
-    // In production, it's better to throw an error to prevent the app from running with misconfiguration.
-    // In development, a console error might be sufficient to alert the developer.
-    throw new Error("Missing required environment variables.");
-  }
+const missingVariables: string[] = [];
+if (!JIRA_CLIENT_ID) missingVariables.push('JIRA_CLIENT_ID');
+if (!JIRA_CLIENT_SECRET) missingVariables.push('JIRA_CLIENT_SECRET');
+if (!JIRA_REDIRECT_URI) missingVariables.push('JIRA_REDIRECT_URI');
+if (!NEXT_PUBLIC_APP_URL) missingVariables.push('NEXT_PUBLIC_APP_URL');
+if (!SESSION_SECRET) missingVariables.push('SESSION_SECRET');
+
+if (missingVariables.length > 0) {
+  const message = `Missing required environment variables: ${missingVariables.join(', ')}. Check your .env.local file or environment configuration.`;
+  console.error(message);
+  // Throw an error in all environments if critical variables are missing.
+  // The app cannot function correctly without them.
+  throw new Error(message);
 }
