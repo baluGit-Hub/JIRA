@@ -1,3 +1,4 @@
+
 import { redirect } from 'next/navigation';
 import { isAuthenticated, getUserDetails } from '@/lib/authService';
 import Header from '@/components/Header';
@@ -8,29 +9,48 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
 async function getBoardsData(): Promise<BoardWithDetails[] | { error: string }> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+
   try {
-    // This fetch needs to be to our own API route, which then calls JIRA
-    const res = await fetch(`${NEXT_PUBLIC_APP_URL}/api/jira/boards`, {
+    const apiUrl = `${NEXT_PUBLIC_APP_URL}/api/jira/boards`;
+    console.log(`Dashboard: Fetching boards from: ${apiUrl}`); 
+
+    const res = await fetch(apiUrl, {
       headers: {
         // Pass along cookies if needed by your /api/jira/boards route for auth
         // For server-side fetch within Route Handlers or Server Components, cookies are often forwarded automatically or can be explicitly passed.
-        // If running in a browser context, this would be different. But this is a server component.
         // The crucial part is that /api/jira/boards must correctly use the session cookie.
         'Cookie': require('next/headers').cookies().toString(),
       },
       cache: 'no-store', // Ensure fresh data
+      signal: controller.signal, // Add abort signal
     });
+    clearTimeout(timeoutId); // Clear timeout if fetch completes
 
     if (!res.ok) {
-      const errorData = await res.json();
-      console.error("Error fetching boards from API route:", res.status, errorData);
-      return { error: errorData.details || errorData.error || `Failed to load boards (status: ${res.status})` };
+      let errorDetails = `Failed to load boards (status: ${res.status})`;
+      try {
+        const errorData = await res.json();
+        errorDetails = errorData.details || errorData.error || errorDetails;
+      } catch (jsonError) {
+        errorDetails = `Error processing API response: ${res.statusText || errorDetails}. Check server logs for /api/jira/boards.`;
+        console.warn("Response from /api/jira/boards was not JSON or failed to parse:", jsonError, await res.text().catch(() => "Could not read response text."));
+      }
+      console.error("Error fetching boards from API route (/api/jira/boards):", res.status, errorDetails);
+      return { error: errorDetails };
     }
     return res.json();
-  } catch (e) {
+  } catch (e: any) {
+    clearTimeout(timeoutId);
+    if (e.name === 'AbortError') {
+      console.error("Fetch to /api/jira/boards timed out.");
+      return { error: "Request to JIRA services timed out. Please try again. Ensure the application URL in your environment variables is correct." };
+    }
     console.error("Network or other error fetching boards:", e);
     const message = e instanceof Error ? e.message : "Unknown error";
-    return { error: `Failed to connect to JIRA services: ${message}` };
+    // Add a hint about NEXT_PUBLIC_APP_URL configuration
+    return { error: `Failed to connect to JIRA services: ${message}. Please check your network connection and ensure the application URL (currently: ${NEXT_PUBLIC_APP_URL}) is correctly configured in your environment variables.` };
   }
 }
 
@@ -59,7 +79,7 @@ export default async function DashboardPage() {
             <AlertDescription>
               Could not load your JIRA boards. Details: {boardsData.error}
               <br />
-              Please try refreshing the page. If the problem persists, you might need to sign out and sign back in.
+              Please try refreshing the page. If the problem persists, check your internet connection, ensure the application URL is correctly configured, or you might need to sign out and sign back in.
             </AlertDescription>
           </Alert>
         ) : boardsData.length === 0 ? (
