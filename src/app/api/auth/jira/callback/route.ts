@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { ATLASSIAN_CLIENT_ID, ATLASSIAN_CLIENT_SECRET, ATLASSIAN_REDIRECT_URI, NEXT_PUBLIC_APP_URL } from '@/config';
+import { JIRA_CLIENT_ID, JIRA_CLIENT_SECRET, JIRA_REDIRECT_URI, NEXT_PUBLIC_APP_URL } from '@/config';
 import { storeTokens, storeUserDetails, clearSession } from '@/lib/authService';
 // Renamed imported getCloudId to avoid conflict with local variables if any, and for clarity.
 // This 'fetchAndStoreCloudId' is actually the getCloudId function from jiraService that also handles storing.
@@ -41,10 +41,10 @@ export async function GET(request: NextRequest) {
       },
       body: JSON.stringify({
         grant_type: 'authorization_code',
-        client_id: ATLASSIAN_CLIENT_ID,
-        client_secret: ATLASSIAN_CLIENT_SECRET,
+        client_id: JIRA_CLIENT_ID,
+        client_secret: JIRA_CLIENT_SECRET,
         code: code,
-        redirect_uri: ATLASSIAN_REDIRECT_URI,
+        redirect_uri: JIRA_REDIRECT_URI,
       }),
     });
 

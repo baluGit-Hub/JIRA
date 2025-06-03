@@ -1,5 +1,6 @@
+
 import { NextResponse } from 'next/server';
-import { ATLASSIAN_CLIENT_ID, ATLASSIAN_REDIRECT_URI } from '@/config';
+import { JIRA_CLIENT_ID, JIRA_REDIRECT_URI } from '@/config';
 import { v4 as uuidv4 } from 'uuid'; // For generating a state parameter
 import { cookies } from 'next/headers';
 
@@ -22,9 +23,9 @@ export async function GET() {
 
   const authorizationUrl = new URL('https://auth.atlassian.com/authorize');
   authorizationUrl.searchParams.append('audience', 'api.atlassian.com');
-  authorizationUrl.searchParams.append('client_id', ATLASSIAN_CLIENT_ID);
+  authorizationUrl.searchParams.append('client_id', JIRA_CLIENT_ID);
   authorizationUrl.searchParams.append('scope', scopes.join(' '));
-  authorizationUrl.searchParams.append('redirect_uri', ATLASSIAN_REDIRECT_URI);
+  authorizationUrl.searchParams.append('redirect_uri', JIRA_REDIRECT_URI);
   authorizationUrl.searchParams.append('state', state);
   authorizationUrl.searchParams.append('response_type', 'code');
   authorizationUrl.searchParams.append('prompt', 'consent');
