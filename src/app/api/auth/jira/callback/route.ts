@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { ATLASSIAN_CLIENT_ID, ATLASSIAN_CLIENT_SECRET, ATLASSIAN_REDIRECT_URI, NEXT_PUBLIC_APP_URL } from '@/config';
 import { storeTokens, storeCloudId, storeUserDetails, clearSession } from '@/lib/authService';
@@ -8,15 +9,27 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get('code');
   const state = searchParams.get('state');
+  const error = searchParams.get('error'); // Check for error from Atlassian
+  const errorDescription = searchParams.get('error_description'); // Check for error_description
 
   const storedState = cookies().get('jira_oauth_state')?.value;
   cookies().delete('jira_oauth_state'); // Clean up state cookie
+
+  if (error) { // If Atlassian returned an error
+    console.error(`OAuth error from Atlassian: ${error} - ${errorDescription || 'No description'}`);
+    // Pass the error and description to the login page
+    const redirectUrl = new URL(`${NEXT_PUBLIC_APP_URL}/login`);
+    redirectUrl.searchParams.set('error', 'atlassian_error');
+    redirectUrl.searchParams.set('message', errorDescription || error);
+    return NextResponse.redirect(redirectUrl.toString());
+  }
 
   if (!state || state !== storedState) {
     return NextResponse.redirect(`${NEXT_PUBLIC_APP_URL}/login?error=invalid_state`);
   }
 
   if (!code) {
+    // This case might be hit if there's no error param but also no code from Atlassian.
     return NextResponse.redirect(`${NEXT_PUBLIC_APP_URL}/login?error=missing_code`);
   }
 
@@ -39,25 +52,25 @@ export async function GET(request: NextRequest) {
       const errorData = await tokenResponse.json();
       console.error('Failed to exchange code for token:', errorData);
       await clearSession();
-      return NextResponse.redirect(`${NEXT_PUBLIC_APP_URL}/login?error=token_exchange_failed`);
+      // Pass a more detailed error message if available
+      const detail = errorData.error_description || errorData.error || 'token_exchange_failed';
+      return NextResponse.redirect(`${NEXT_PUBLIC_APP_URL}/login?error=token_exchange_failed&message=${encodeURIComponent(detail)}`);
     }
 
     const { access_token, refresh_token } = await tokenResponse.json();
     await storeTokens(access_token, refresh_token);
 
-    // Fetch and store cloudId and user details
-    // Note: getCloudId from jiraService handles fetching resources and storing the first cloudId.
-    // This relies on the token being available in the session, which storeTokens just did.
-    const cloudId = await fetchAndStoreCloudId(); // This also stores it in session
+    const cloudId = await fetchAndStoreCloudId();
     const jiraUser = await getJiraUser();
     await storeUserDetails(jiraUser.accountId, jiraUser.displayName);
 
 
     return NextResponse.redirect(`${NEXT_PUBLIC_APP_URL}/dashboard`);
 
-  } catch (error) {
-    console.error('OAuth callback error:', error);
+  } catch (e) {
+    console.error('OAuth callback error:', e);
     await clearSession();
-    return NextResponse.redirect(`${NEXT_PUBLIC_APP_URL}/login?error=internal_server_error`);
+    const message = e instanceof Error ? e.message : 'Internal server error during callback processing.';
+    return NextResponse.redirect(`${NEXT_PUBLIC_APP_URL}/login?error=internal_server_error&message=${encodeURIComponent(message)}`);
   }
 }
