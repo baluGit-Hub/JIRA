@@ -15,7 +15,12 @@ export async function GET(request: NextRequest) {
   const errorDescription = searchParams.get('error_description');
 
   const storedState = cookies().get('jira_oauth_state')?.value;
+  // It's good practice to delete the state cookie once it's used or if it's invalid,
+  // regardless of whether the state check passes or fails.
   cookies().delete('jira_oauth_state'); 
+
+  // For debugging, one might log the state values here if the issue persists:
+  // console.log("OAuth State Check: Received State from JIRA Query:", state, "Stored State from Cookie:", storedState);
 
   if (error) { 
     console.error(`OAuth error from Atlassian: ${error} - ${errorDescription || 'No description'}`);
@@ -26,6 +31,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (!state || state !== storedState) {
+    console.warn("OAuth State Mismatch: Received State:", state, "Stored State:", storedState, "- Redirecting to login with invalid_state error.");
     return NextResponse.redirect(`${NEXT_PUBLIC_APP_URL}/login?error=invalid_state`);
   }
 
@@ -51,7 +57,7 @@ export async function GET(request: NextRequest) {
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.json();
       console.error('Failed to exchange code for token:', errorData);
-      await clearSession();
+      await clearSession(); // Clear any partial session data
       const detail = errorData.error_description || errorData.error || 'token_exchange_failed';
       return NextResponse.redirect(`${NEXT_PUBLIC_APP_URL}/login?error=token_exchange_failed&message=${encodeURIComponent(detail)}`);
     }
@@ -61,9 +67,9 @@ export async function GET(request: NextRequest) {
     await storeTokens(access_token, refresh_token);
 
     // For immediate calls within this callback, pass the fresh access_token directly
-    // This bypasses potential session read-after-write issues with the mock session store
-    const cloudId = await fetchAndStoreCloudId(access_token); // Pass token here
-    const jiraUser = await getJiraUser(access_token); // Pass token here
+    // This bypasses potential session read-after-write issues.
+    const cloudId = await fetchAndStoreCloudId(access_token); 
+    const jiraUser = await getJiraUser(access_token); 
     
     // Store user details in session (uses its own session.save())
     await storeUserDetails(jiraUser.accountId, jiraUser.displayName);
@@ -73,9 +79,8 @@ export async function GET(request: NextRequest) {
 
   } catch (e) {
     console.error('OAuth callback error:', e);
-    await clearSession();
+    await clearSession(); // Ensure session is cleared on any error during callback processing
     const message = e instanceof Error ? e.message : 'Internal server error during callback processing.';
-    // If the error is "Not authenticated", it means an issue with token availability for jiraService calls
     const errorCode = (e instanceof Error && e.message === 'Not authenticated') ? 'token_not_available_for_api_calls' : 'internal_server_error';
     return NextResponse.redirect(`${NEXT_PUBLIC_APP_URL}/login?error=${errorCode}&message=${encodeURIComponent(message)}`);
   }

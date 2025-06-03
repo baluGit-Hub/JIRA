@@ -12,6 +12,7 @@ export async function GET() {
     secure: process.env.NODE_ENV === 'production',
     maxAge: 60 * 5, // 5 minutes
     path: '/',
+    sameSite: 'lax', // Explicitly set SameSite attribute
   });
 
   const scopes = [
