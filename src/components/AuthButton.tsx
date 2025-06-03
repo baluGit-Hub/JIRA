@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { LogIn, LogOut, UserCircle } from 'lucide-react';
 import {
@@ -56,10 +55,11 @@ export default function AuthButton({ isLoggedIn, userName, userAvatar }: AuthBut
             </>
           )}
           <DropdownMenuItem asChild>
-            <Link href="/api/auth/jira/logout" className="flex items-center cursor-pointer">
+            {/* Use a regular <a> tag for logout to ensure full page navigation if needed */}
+            <a href="/api/auth/jira/logout" className="flex items-center cursor-pointer w-full">
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>
-            </Link>
+            </a>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -67,11 +67,11 @@ export default function AuthButton({ isLoggedIn, userName, userAvatar }: AuthBut
   }
 
   return (
-    <Link href="/api/auth/jira/redirect" passHref legacyBehavior>
-      <Button variant="outline">
+    <a href="/api/auth/jira/redirect">
+      <Button variant="outline" type="button">
         <LogIn className="mr-2 h-4 w-4" />
         Sign in with JIRA
       </Button>
-    </Link>
+    </a>
   );
 }

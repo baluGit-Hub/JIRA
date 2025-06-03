@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import Link from 'next/link';
 import { AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface LoginPageProps {
@@ -65,11 +64,11 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
               <p className="text-sm">{successMessageText}</p>
             </div>
           )}
-          <Link href="/api/auth/jira/redirect" passHref legacyBehavior>
-            <Button size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-3">
+          <a href="/api/auth/jira/redirect" className="w-full">
+            <Button size="lg" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-3" type="button">
               Sign in with JIRA
             </Button>
-          </Link>
+          </a>
           <p className="text-xs text-muted-foreground text-center px-4">
             By signing in, you agree to allow JIRA Board Glance to access your JIRA data as per Atlassian's authorization.
           </p>
